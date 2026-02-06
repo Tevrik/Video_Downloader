@@ -234,7 +234,7 @@ app.get('/api/proxy', async (req, res) => {
 });
 
 // Catch-all to serve frontend (SPA support)
-app.get('(.*)', (req, res) => {
+app.get('/:path*', (req, res) => {
     const indexPath = path.join(frontendDist, 'index.html');
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);

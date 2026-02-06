@@ -16,18 +16,22 @@ if ! command -v ffmpeg &> /dev/null; then
     exit 1
 fi
 
-# Ensure 'python' command exists (some node libs expect it)
-mkdir -p .local_bin
-if [ ! -L ".local_bin/python" ]; then
-    ln -s $(which python3) .local_bin/python
-fi
-export PATH="$(pwd)/.local_bin:$PATH"
+# Ensure we are in the script's directory
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$ROOT_DIR"
 
 # Start backend in background from its own directory
+echo "Starting Node.js Backend..."
 (cd backend && node server.js) &
 BACKEND_PID=$!
 
 echo "Starting Vite Frontend..."
-cd frontend && npm run dev
+if [ -d "frontend" ]; then
+    cd frontend && npm run dev
+else
+    echo "Error: frontend directory not found!"
+    kill $BACKEND_PID
+    exit 1
+fi
 
 wait $BACKEND_PID
