@@ -18,6 +18,9 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 
+// Health check
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
 // Ensure temp directory exists
 const tempDir = path.join(process.cwd(), 'temp_downloads');
 if (!fs.existsSync(tempDir)) {
