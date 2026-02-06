@@ -1,34 +1,10 @@
 {
-  "name": "snapsave-pro---universal-video-downloader",
+  "name": "snapsave-pro-universal",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "start": "bash start.sh",
-    "dev": "bash start.sh",
-    "dev:vite": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@google/genai": "^1.38.0",
-    "axios": "^1.13.4",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "lucide-react": "^0.563.0",
-    "morgan": "^1.10.1",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router-dom": "^7.13.0",
-    "yt-dlp-exec": "^1.0.2"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/morgan": "^1.9.10",
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "backend": "cd backend && npm start",
+    "frontend": "cd frontend && npm run dev",
+    "install-all": "cd backend && npm install && cd ../frontend && npm install"
   }
 }

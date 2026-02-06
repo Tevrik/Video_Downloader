@@ -24,10 +24,11 @@ fi
 export PATH="$(pwd)/.local_bin:$PATH"
 
 echo "Starting Node.js Backend on port 8000..."
-node server/index.js &
+cd backend && node server.js &
 BACKEND_PID=$!
+cd ..
 
 echo "Starting Vite Frontend..."
-npm run dev:vite
+cd frontend && npm run dev
 
 wait $BACKEND_PID
