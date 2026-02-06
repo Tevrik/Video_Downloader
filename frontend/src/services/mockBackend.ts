@@ -31,8 +31,8 @@ const checkRateLimit = (): boolean => {
 
 // --- STRATEGY 1: Local Backend API ---
 async function tryLocalBackend(url: string, platform: PlatformId): Promise<VideoMetadata | null> {
-  // Use environment variable for production URL, fallback to relative for Vite proxy in dev
-  const baseUrl = import.meta.env.VITE_API_URL || '';
+  // Use environment variable for production URL, fallback to live Render URL
+  const baseUrl = import.meta.env.VITE_API_URL || 'https://video-downloader-qb6d.onrender.com';
   const endpoint = `${baseUrl}/api/download`;
 
   try {
