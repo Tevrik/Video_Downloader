@@ -23,10 +23,9 @@ if [ ! -L ".local_bin/python" ]; then
 fi
 export PATH="$(pwd)/.local_bin:$PATH"
 
-echo "Starting Node.js Backend on port 8000..."
-cd backend && node server.js &
+# Start backend in background from its own directory
+(cd backend && node server.js) &
 BACKEND_PID=$!
-cd ..
 
 echo "Starting Vite Frontend..."
 cd frontend && npm run dev
