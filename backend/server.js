@@ -236,13 +236,19 @@ app.get('/api/proxy', async (req, res) => {
     }
 });
 
-// Catch-all to serve frontend (SPA support)
-app.get('/:path*', (req, res) => {
+// Catch-all middleware for SPA support
+app.use((req, res, next) => {
+    // Skip API routes so they can be handled by actual routes or 404
+    if (req.path.startsWith('/api')) {
+        return next();
+    }
+
+    // Serve index.html for all other routes
     const indexPath = path.join(frontendDist, 'index.html');
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
     } else {
-        res.status(404).send('Frontend build not found. Run npm run build.');
+        res.status(404).send('Frontend build not found. Please run: npm run build');
     }
 });
 

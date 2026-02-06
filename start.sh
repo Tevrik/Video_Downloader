@@ -41,6 +41,25 @@ npm run start > ../backend.log 2>&1 &
 BACKEND_PID=$!
 cd ..
 
+# Wait for backend to be ready (up to 30 seconds)
+echo "Waiting for backend to be ready..."
+COUNT=0
+while ! curl -s http://localhost:8000/api/health > /dev/null; do
+    sleep 1
+    COUNT=$((COUNT+1))
+    if [ $COUNT -ge 30 ]; then
+        echo "Error: Backend failed to start. See backend.log for details."
+        kill $BACKEND_PID 2>/dev/null
+        exit 1
+    fi
+    # Check if process is still running
+    if ! kill -0 $BACKEND_PID 2>/dev/null; then
+        echo "Error: Backend crashed immediately. See backend.log"
+        exit 1
+    fi
+done
+echo "Backend is ready!"
+
 echo "Starting Vite Frontend..."
 if [ -d "frontend" ]; then
     cd frontend && npm run dev
