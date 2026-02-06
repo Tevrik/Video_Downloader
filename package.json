@@ -2,9 +2,9 @@
   "name": "snapsave-pro-universal",
   "private": true,
   "scripts": {
-    "start": "bash start.sh",
-    "backend": "cd backend && npm start",
-    "frontend": "cd frontend && npm run dev",
-    "install-all": "cd backend && npm install && cd ../frontend && npm install"
+    "start": "cd backend && node server.js",
+    "build": "cd frontend && npm install && npm run build",
+    "install-all": "cd backend && npm install && cd ../frontend && npm install",
+    "dev": "bash start.sh"
   }
 }

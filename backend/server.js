@@ -11,7 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = 8000;
+const port = process.env.PORT || 8000;
 
 // Middleware
 app.use(cors());
@@ -22,6 +22,12 @@ app.use(express.json());
 const tempDir = path.join(process.cwd(), 'temp_downloads');
 if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
+}
+
+// Serve Static Frontend Files (Production)
+const frontendDist = path.join(__dirname, '../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+    app.use(express.static(frontendDist));
 }
 
 function formatDuration(seconds) {
@@ -224,6 +230,16 @@ app.get('/api/proxy', async (req, res) => {
     } catch (error) {
         console.error('Proxy Error:', error);
         res.status(400).json({ error: `Proxy error: ${error.message}` });
+    }
+});
+
+// Catch-all to serve frontend (SPA support)
+app.get('*', (req, res) => {
+    const indexPath = path.join(frontendDist, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send('Frontend build not found. Run npm run build.');
     }
 });
 

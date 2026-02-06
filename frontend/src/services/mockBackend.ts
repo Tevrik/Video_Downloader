@@ -50,8 +50,24 @@ async function tryLocalBackend(url: string, platform: PlatformId): Promise<Video
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      const data = await response.json();
-      return data as VideoMetadata;
+      const data = await response.json() as VideoMetadata;
+
+      // If we have a remote baseUrl, transform relative URLs to absolute
+      if (baseUrl) {
+        const transformUrl = (url: string) => url.startsWith('/') ? `${baseUrl}${url}` : url;
+
+        if (data.qualities) {
+          data.qualities = data.qualities.map(q => ({ ...q, url: transformUrl(q.url) }));
+        }
+        if (data.audio) {
+          data.audio = data.audio.map(a => ({ ...a, url: transformUrl(a.url) }));
+        }
+        if (data.video) {
+          data.video = data.video.map(v => ({ ...v, url: transformUrl(v.url) }));
+        }
+      }
+
+      return data;
     }
   } catch (e) {
     console.warn(`Failed to connect to ${endpoint}`, e);
