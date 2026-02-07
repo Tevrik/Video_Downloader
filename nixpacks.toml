@@ -1,0 +1,25 @@
+[phases.setup]
+nixPkgs = ["nodePackages.npm", "python3", "ffmpeg"]
+
+[phases.install]
+# Ensure 'python' points to 'python3' during dependency installation
+# We create a symlink in a directory that is early in the PATH
+cmds = [
+    "mkdir -p .local_bin",
+    "ln -sf $(which python3) .local_bin/python",
+    "export PATH=$(pwd)/.local_bin:$PATH",
+    "npm ci"
+]
+
+[phases.build]
+# Standard build command
+cmds = ["npm run build"]
+
+[start]
+# Use the standardized start script
+cmd = "npm start"
+
+[env]
+# Ensure .local_bin is in PATH for all subsequent phases
+PATH = "/app/.local_bin:$PATH"
+NPM_CONFIG_PRODUCTION = "false" # Allows installing devDeps if needed for build

@@ -11,7 +11,7 @@
     "install:all": "npm install",
     "dev": "npm run setup && concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\"",
     "build": "npm run build -w frontend",
-    "start": "npm run setup && npm run start -w backend"
+    "start": "export PATH=\"$(pwd)/.local_bin:$PATH\" && npm run setup && npm run start -w backend"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
