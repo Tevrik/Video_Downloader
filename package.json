@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "setup": "node scripts/setup.js",
+    "preinstall": "mkdir -p .local_bin && (ln -sf $(which python3 || which python) .local_bin/python || true)",
     "install:all": "npm install",
     "dev": "npm run setup && concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\"",
     "build": "npm run build -w frontend",
