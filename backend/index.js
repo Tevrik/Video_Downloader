@@ -18,14 +18,32 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 
-// Health check
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+// Health check with diagnostics
+app.get('/api/health', async (req, res) => {
+    let ytdlpVersion = 'unknown';
+    try {
+        ytdlpVersion = (await youtubedl('--version')).trim();
+    } catch (e) {
+        ytdlpVersion = `Error: ${e.message}`;
+    }
+
+    res.json({
+        status: 'ok',
+        time: new Date().toISOString(),
+        env: process.env.NODE_ENV || 'development',
+        port: port,
+        ytdlp: ytdlpVersion,
+        cwd: process.cwd(),
+        python: process.env.PYTHON_PATH || 'not set'
+    });
+});
 
 // Ensure temp directory exists
 const tempDir = path.join(process.cwd(), 'temp_downloads');
 if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
 }
+console.log(`Temp directory confirmed at: ${tempDir}`);
 
 // Serve Static Frontend Files (Production)
 const frontendDist = path.join(__dirname, '../frontend/dist');
