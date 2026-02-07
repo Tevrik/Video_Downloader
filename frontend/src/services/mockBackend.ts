@@ -34,7 +34,8 @@ async function tryLocalBackend(url: string, platform: PlatformId): Promise<Video
   // Detect if we are running locally to use relative paths (Vite proxy)
   // Otherwise use the Render production URL
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const baseUrl = import.meta.env.VITE_API_URL || (isLocal ? '' : 'https://video-downloader-test-a.onrender.com');
+  // Use local proxy if on localhost, otherwise use ENV or production fallback
+  const baseUrl = isLocal ? '' : (import.meta.env.VITE_API_URL || 'https://video-downloader-test-a.onrender.com');
   const endpoint = `${baseUrl}/api/download`;
 
   try {
