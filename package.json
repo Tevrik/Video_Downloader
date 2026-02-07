@@ -2,14 +2,16 @@
   "name": "snapsave-pro-universal",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
     "setup": "node scripts/setup.js",
-    "backend": "cd backend && npm run start",
-    "frontend": "cd frontend && npm run dev",
-    "dev": "npm run setup && concurrently \"npm run backend\" \"npm run frontend\"",
-    "start": "cd backend && node server.js",
-    "build": "cd frontend && npm install && npm run build",
-    "install-all": "cd backend && npm install && cd ../frontend && npm install"
+    "install:all": "npm install",
+    "dev": "npm run setup && concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w frontend",
+    "start": "npm run setup && npm run start -w backend"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
