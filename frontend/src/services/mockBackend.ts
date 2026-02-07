@@ -220,7 +220,7 @@ export const fetchVideoMetadata = async (url: string, platform: PlatformId): Pro
     if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
       const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       if (isLocal) {
-        msg = "Could not reach download server. Please ensure the 'start.sh' script is running.";
+        msg = "Could not reach download server. Please ensure you have started the application with 'npm run dev'.";
       } else {
         msg = "The download server is currently unreachable. If you are the owner, please ensure your backend service is running and properly configured.";
       }
