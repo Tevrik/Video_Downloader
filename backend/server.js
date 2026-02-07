@@ -28,7 +28,7 @@ if (!fs.existsSync(tempDir)) {
 }
 
 // Serve Static Frontend Files (Production)
-const frontendDist = path.join(__dirname, '../../frontend/dist');
+const frontendDist = path.join(__dirname, '../frontend/dist');
 if (fs.existsSync(frontendDist)) {
     app.use(express.static(frontendDist));
 }

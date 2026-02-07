@@ -3,11 +3,8 @@ nixPkgs = ["nodePackages.npm", "python3", "ffmpeg"]
 
 [phases.install]
 dependsOn = ["setup"]
-cmds = [
-    "mkdir -p .local_bin",
-    "ln -sf $(which python3) .local_bin/python",
-    "PATH=/app/.local_bin:$PATH npm ci"
-]
+# preinstall script in package.json handles the python symlink
+cmds = ["npm ci"]
 
 [phases.build]
 dependsOn = ["install"]
