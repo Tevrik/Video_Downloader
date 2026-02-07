@@ -51,7 +51,21 @@ async function tryLocalBackend(url: string, platform: PlatformId): Promise<Video
 
     if (response.ok) {
       const data = await response.json() as VideoMetadata;
-      // ... (rest transform logic)
+
+      // Ensure all media URLs are absolute if a baseUrl is provided (fallback)
+      // but since baseUrl is empty string, these will remain relative
+      const transformUrl = (url: string) => (baseUrl && url.startsWith('/')) ? `${baseUrl}${url}` : url;
+
+      if (data.qualities) {
+        data.qualities = data.qualities.map(q => ({ ...q, url: transformUrl(q.url) }));
+      }
+      if (data.audio) {
+        data.audio = data.audio.map(a => ({ ...a, url: transformUrl(a.url) }));
+      }
+      if (data.video) {
+        data.video = data.video.map(v => ({ ...v, url: transformUrl(v.url) }));
+      }
+
       return data;
     } else {
       const errorData = await response.json().catch(() => ({}));
