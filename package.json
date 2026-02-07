@@ -6,9 +6,9 @@
     "setup": "node scripts/setup.js",
     "preinstall": "mkdir -p .local_bin && (ln -sf $(which python3 || which python) .local_bin/python || true)",
     "postinstall": "cd frontend && npm install",
-    "dev": "npm run setup && concurrently \"nodemon backend/server.js\" \"cd frontend && npm run dev\"",
+    "dev": "npm run setup && concurrently \"nodemon backend/index.js\" \"cd frontend && npm run dev\"",
     "build": "cd frontend && npm install && npm run build",
-    "start": "export PATH=\"$(pwd)/.local_bin:$PATH\" && npm run setup && node backend/server.js"
+    "start": "export PATH=\"$(pwd)/.local_bin:$PATH\" && npm run setup && node backend/index.js"
   },
   "dependencies": {
     "axios": "^1.13.4",
