@@ -60,18 +60,18 @@ const ThumbnailPage: React.FC = () => {
         <div className="min-h-screen pt-12 pb-24 px-4">
             <div className="max-w-3xl mx-auto">
                 <div className="text-center mb-12">
-                    <div className="inline-flex items-center justify-center p-4 rounded-full bg-violet-100 mb-6 text-violet-600">
+                    <div className="inline-flex items-center justify-center p-4 rounded-full bg-violet-100 dark:bg-violet-900/30 mb-6 text-violet-600 dark:text-violet-400">
                         <ImageIcon className="w-10 h-10" />
                     </div>
-                    <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
-                        Free Video <span className="text-violet-600">Thumbnail Downloader</span>
+                    <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-4">
+                        Free Video <span className="text-violet-600 dark:text-violet-400">Thumbnail Downloader</span>
                     </h1>
-                    <p className="text-lg text-slate-500">
+                    <p className="text-lg text-slate-500 dark:text-slate-400">
                         Get high-quality thumbnails from YouTube, Instagram, TikTok, and more.
                     </p>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-12 border border-slate-100 p-6 md:p-8">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl overflow-hidden mb-12 border border-slate-100 dark:border-slate-800 p-6 md:p-8">
                     <form onSubmit={handleSubmit} className="relative mb-6">
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -82,7 +82,7 @@ const ThumbnailPage: React.FC = () => {
                                 value={url}
                                 onChange={(e) => setUrl(e.target.value)}
                                 placeholder="Paste video URL here..."
-                                className="block w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                                className="block w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
                                 required
                             />
                             <button
@@ -96,7 +96,7 @@ const ThumbnailPage: React.FC = () => {
                     </form>
 
                     {error && (
-                        <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 text-center mb-6">
+                        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl border border-red-100 dark:border-red-900/30 text-center mb-6">
                             {error}
                         </div>
                     )}
@@ -111,14 +111,14 @@ const ThumbnailPage: React.FC = () => {
                                 />
                             </div>
 
-                            <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                                 <div className="min-w-0">
-                                    <h3 className="font-semibold text-slate-900 truncate pr-4">{result.title}</h3>
-                                    <p className="text-sm text-slate-500">Source: {result.platform}</p>
+                                    <h3 className="font-semibold text-slate-900 dark:text-white truncate pr-4">{result.title}</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">Source: {result.platform}</p>
                                 </div>
                                 <button
                                     onClick={handleDownload}
-                                    className="whitespace-nowrap flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                                    className="whitespace-nowrap flex items-center space-x-2 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
                                 >
                                     <Download className="w-4 h-4" />
                                     <span>Download Thumbnail</span>
@@ -129,7 +129,7 @@ const ThumbnailPage: React.FC = () => {
                 </div>
 
                 {/* Instructions */}
-                <div className="prose prose-slate mx-auto text-center text-slate-500">
+                <div className="prose prose-slate dark:prose-invert mx-auto text-center text-slate-500 dark:text-slate-400">
                     <p>Simply paste the video link from any supported platform to grab the full resolution thumbnail image.</p>
                 </div>
             </div>

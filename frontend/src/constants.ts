@@ -28,7 +28,7 @@ export const PLATFORMS: PlatformConfig[] = [
     id: 'tiktok',
     name: 'TikTok',
     icon: Video, // Generic video icon for TikTok
-    color: 'text-black',
+    color: 'text-black dark:text-white',
     gradient: 'from-cyan-400 to-blue-500',
     placeholder: 'Paste TikTok video link...',
     regex: /tiktok\.com/,
