@@ -31,10 +31,9 @@ const checkRateLimit = (): boolean => {
 
 // --- STRATEGY 1: Local Backend API ---
 async function tryLocalBackend(url: string, platform: PlatformId): Promise<VideoMetadata | null> {
-  // Use local proxy if in development, otherwise use ENV or production fallback
-  const isDev = import.meta.env.DEV;
-  const baseUrl = isDev ? '' : (import.meta.env.VITE_API_URL || 'https://video-downloader-test-a.onrender.com');
-  const endpoint = `${baseUrl}/api/download`;
+  // Always use relative path in production/development for standard structure
+  const baseUrl = '';
+  const endpoint = '/api/download';
 
   try {
     // 2 second timeout to check if local server is running
