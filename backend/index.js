@@ -87,12 +87,12 @@ app.post('/api/download', async (req, res) => {
         const userAgent = commonHeaders['User-Agent'] || '';
         const referer = commonHeaders['Referer'] || '';
 
-        const createProxyUrl = (targetUrl) => {
+        const createProxyUrl = (targetUrl, ext = 'mp4') => {
             if (!targetUrl) return "";
             const encodedUrl = encodeURIComponent(targetUrl);
             const encodedUa = encodeURIComponent(userAgent);
             const encodedRef = encodeURIComponent(referer);
-            return `/api/proxy?url=${encodedUrl}&ua=${encodedUa}&ref=${encodedRef}`;
+            return `/api/proxy?url=${encodedUrl}&ua=${encodedUa}&ref=${encodedRef}&ext=${ext}`;
         };
 
         const audioFormats = [];
@@ -123,6 +123,7 @@ app.post('/api/download', async (req, res) => {
                 const filesize = f.filesize || f.filesize_approx;
                 const height = f.height;
                 const abr = f.abr;
+                const ext = f.ext || 'v';
 
                 let sizeStr = "Unknown";
                 if (filesize) {
@@ -133,27 +134,44 @@ app.post('/api/download', async (req, res) => {
                 // Audio Only
                 if (vcodec === 'none' && acodec !== 'none') {
                     const bitrate = abr ? `${Math.floor(abr)}KBPS` : "Audio";
-                    if (!seenAudio.has(bitrate)) {
+                    const audioLabel = ext.toUpperCase() === 'M4A' ? 'M4A' : (ext.toUpperCase() === 'WEBM' ? 'WEBM' : 'Audio');
+                    if (!seenAudio.has(bitrate + ext)) {
                         audioFormats.push({
-                            label: "MP3",
+                            label: audioLabel,
                             sub_label: bitrate,
                             size: sizeStr,
-                            format: "mp3",
-                            url: createProxyUrl(f.url)
+                            format: ext,
+                            url: createProxyUrl(f.url, ext)
                         });
-                        seenAudio.add(bitrate);
+                        seenAudio.add(bitrate + ext);
                     }
                 }
-                // Progressive Video
+                // Progressive Video (Video + Audio combined)
                 else if (vcodec !== 'none' && acodec !== 'none') {
                     const label = height ? `${height}p` : "Video";
+                    const videoLabel = ext.toUpperCase();
+                    if (!seenVideo.has(label + ext)) {
+                        videoFormats.push({
+                            label: videoLabel,
+                            sub_label: label,
+                            size: sizeStr,
+                            format: ext,
+                            url: createProxyUrl(f.url, ext)
+                        });
+                        seenVideo.add(label + ext);
+                    }
+                }
+                // High Quality Video Only (Need merging)
+                else if (vcodec !== 'none' && acodec === 'none' && height >= 1080) {
+                    const label = `${height}p (High Quality)`;
                     if (!seenVideo.has(label)) {
                         videoFormats.push({
                             label: "MP4",
                             sub_label: label,
                             size: sizeStr,
                             format: "mp4",
-                            url: createProxyUrl(f.url)
+                            quality_badge: "High",
+                            url: `/api/process?url=${encodeURIComponent(url)}&quality=${height}`
                         });
                         seenVideo.add(label);
                     }
@@ -192,21 +210,29 @@ app.post('/api/download', async (req, res) => {
 });
 
 app.get('/api/process', async (req, res) => {
-    const { url } = req.query;
-    console.log(`Processing Full Download: ${url}`);
+    const { url, quality } = req.query;
+    console.log(`Processing Full Download: ${url} (Quality: ${quality || 'Best'})`);
 
     const timestamp = Math.floor(Date.now() / 1000);
     const outputFilename = `${timestamp}_video.mp4`;
     const outputPath = path.join(tempDir, outputFilename);
 
     try {
-        await youtubedl(url, {
-            format: 'bestvideo+bestaudio/best',
+        const options = {
             output: outputPath,
             mergeOutputFormat: 'mp4',
             noWarnings: true,
-            noCallHome: true
-        });
+            noCallHome: true,
+            ffmpegLocation: '/usr/bin/ffmpeg' // Explicit path for some environments
+        };
+
+        if (quality) {
+            options.format = `bestvideo[height<=${quality}]+bestaudio/best[height<=${quality}]`;
+        } else {
+            options.format = 'bestvideo+bestaudio/best';
+        }
+
+        await youtubedl(url, options);
 
         if (!fs.existsSync(outputPath)) {
             throw new Error("File not found after download");
@@ -231,7 +257,7 @@ app.get('/api/process', async (req, res) => {
 });
 
 app.get('/api/proxy', async (req, res) => {
-    const { url, ua, ref } = req.query;
+    const { url, ua, ref, ext = 'mp4' } = req.query;
     try {
         const headers = {};
         if (ua) headers['User-Agent'] = ua;
@@ -244,8 +270,16 @@ app.get('/api/proxy', async (req, res) => {
             headers: headers
         });
 
-        res.setHeader('Content-Type', response.headers['content-type'] || 'video/mp4');
-        res.setHeader('Content-Disposition', 'attachment; filename=video.mp4');
+        const contentTypeMap = {
+            'mp4': 'video/mp4',
+            'm4a': 'audio/mp4',
+            'webm': 'video/webm',
+            'mp3': 'audio/mpeg',
+            'opus': 'audio/opus'
+        };
+
+        res.setHeader('Content-Type', contentTypeMap[ext] || response.headers['content-type'] || 'video/mp4');
+        res.setHeader('Content-Disposition', `attachment; filename="download.${ext}"`);
 
         response.data.pipe(res);
     } catch (error) {
