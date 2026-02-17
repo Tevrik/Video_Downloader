@@ -66,6 +66,7 @@ async function tryLocalBackend(url: string, platform: PlatformId): Promise<Video
         data.video = data.video.map(v => ({ ...v, url: transformUrl(v.url) }));
       }
 
+      data.originalUrl = url;
       return data;
     } else {
       const errorData = await response.json().catch(() => ({}));

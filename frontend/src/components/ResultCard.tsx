@@ -47,6 +47,42 @@ const ResultCard: React.FC<ResultCardProps> = ({ data, onReset }) => {
         {/* Right Column: Download Options */}
         <div className="md:w-2/3 p-6">
 
+          {/* Playlist Section */}
+          {data.isPlaylist && (
+            <div className="mb-8 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800 animate-in zoom-in-95 duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 bg-indigo-500 rounded-lg text-white">
+                    <Music className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-slate-800 dark:text-white leading-none">Full Playlist</h4>
+                    <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">One-click ZIP download</span>
+                  </div>
+                </div>
+
+                <a
+                  href={`/api/playlist/download?url=${encodeURIComponent(data.originalUrl || '')}&title=${encodeURIComponent(data.title)}`}
+                  className="flex items-center space-x-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download All (ZIP)</span>
+                </a>
+              </div>
+
+              <div className="max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-2">
+                  {data.playlistEntries?.map((entry, idx) => (
+                    <div key={idx} className="flex items-center space-x-3 text-sm p-2 rounded hover:bg-white/50 dark:hover:bg-white/5 transition-colors">
+                      <span className="text-slate-400 font-mono text-xs w-4">{idx + 1}.</span>
+                      <span className="text-slate-700 dark:text-slate-300 truncate font-medium">{entry.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Audio Section */}
           {audioOptions.length > 0 && (
             <div className="mb-8">

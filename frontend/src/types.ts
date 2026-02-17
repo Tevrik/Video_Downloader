@@ -30,6 +30,9 @@ export interface VideoMetadata {
   qualities: VideoQuality[]; // Keep for backward compat if needed, or deprecate
   audio: VideoQuality[];     // New: dedicated audio tracks
   video: VideoQuality[];     // New: dedicated video tracks
+  isPlaylist?: boolean;
+  playlistEntries?: { title: string, id: string, url: string }[];
+  originalUrl?: string;
 }
 
 export interface DownloadState {

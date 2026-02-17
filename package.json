@@ -11,6 +11,7 @@
     "start": "export PATH=\"$(pwd)/.local_bin:$PATH\" && npm run setup && node backend/index.js"
   },
   "dependencies": {
+    "archiver": "^7.0.1",
     "axios": "^1.13.4",
     "cors": "^2.8.6",
     "express": "^5.2.1",

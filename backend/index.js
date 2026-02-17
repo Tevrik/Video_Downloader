@@ -6,6 +6,7 @@ import axios from 'axios';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import archiver from 'archiver';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,8 +75,32 @@ app.post('/api/download', async (req, res) => {
             noCheckCertificate: true,
             preferFreeFormats: true,
             youtubeSkipDashManifest: true,
-            referer: url
+            referer: url,
+            flatPlaylist: true
         });
+
+        const isPlaylist = info._type === 'playlist' || (info.entries && info.entries.length > 0);
+
+        if (isPlaylist) {
+            const playlistEntries = info.entries.map(entry => ({
+                id: entry.id,
+                title: entry.title,
+                url: entry.url || `https://www.youtube.com/watch?v=${entry.id}`
+            }));
+
+            return res.json({
+                id: info.id || `pl-${Date.now()}`,
+                title: info.title || 'YouTube Playlist',
+                thumbnail: info.thumbnails?.[0]?.url || (playlistEntries[0] ? `https://i.ytimg.com/vi/${playlistEntries[0].id}/hqdefault.jpg` : ''),
+                duration: `${info.playlist_count || playlistEntries.length} Items`,
+                author: info.uploader || 'YouTube',
+                platform,
+                isPlaylist: true,
+                playlistEntries: playlistEntries,
+                audio: [],
+                video: []
+            });
+        }
 
         const videoId = info.id || Date.now().toString();
         const title = info.title || 'Downloaded Video';
@@ -269,6 +294,62 @@ app.get('/api/process', async (req, res) => {
     } catch (error) {
         console.error('Process Error:', error);
         res.status(400).json({ error: `Server download error: ${error.message}` });
+    }
+});
+
+app.get('/api/playlist/download', async (req, res) => {
+    const { url, title } = req.query;
+    const safeTitle = (title || 'playlist').replace(/[<>:"/\\|?*]/g, '_').substring(0, 50);
+    console.log(`Processing Playlist Download: ${url} (${safeTitle})`);
+
+    const playlistDir = path.join(tempDir, `playlist_${Date.now()}`);
+    if (!fs.existsSync(playlistDir)) fs.mkdirSync(playlistDir, { recursive: true });
+
+    try {
+        // Download all items in playlist
+        // We use a simplified format to speed up playlist downloads
+        await youtubedl(url, {
+            output: `${playlistDir}/%(title)s.%(ext)s`,
+            format: 'bestvideo[height<=720]+bestaudio/best[height<=720]',
+            mergeOutputFormat: 'mp4',
+            noWarnings: true,
+            noCallHome: true,
+            ignoreErrors: true, // If one video fails, continue with others
+            ffmpegLocation: '/usr/bin/ffmpeg'
+        });
+
+        const files = fs.readdirSync(playlistDir);
+        if (files.length === 0) {
+            throw new Error("No videos could be downloaded from this playlist.");
+        }
+
+        // Create ZIP
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.zip"`);
+
+        const archive = archiver('zip', { zlib: { level: 9 } });
+        archive.pipe(res);
+
+        for (const file of files) {
+            archive.file(path.join(playlistDir, file), { name: file });
+        }
+
+        await archive.finalize();
+
+        // Cleanup after streaming
+        res.on('finish', () => {
+            fs.rm(playlistDir, { recursive: true, force: true }, (err) => {
+                if (err) console.error('Error cleaning up playlist dir:', err);
+            });
+        });
+
+    } catch (error) {
+        console.error('Playlist Process Error:', error);
+        if (!res.headersSent) {
+            res.status(400).json({ error: `Playlist download error: ${error.message}` });
+        }
+        // Cleanup on error
+        fs.rm(playlistDir, { recursive: true, force: true }, () => { });
     }
 });
 
