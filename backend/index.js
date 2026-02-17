@@ -87,12 +87,19 @@ app.post('/api/download', async (req, res) => {
         const userAgent = commonHeaders['User-Agent'] || '';
         const referer = commonHeaders['Referer'] || '';
 
+        const sanitizeFilename = (name) => {
+            return name.replace(/[<>:"/\\|?*]/g, '_').substring(0, 100);
+        };
+
+        const safeTitle = sanitizeFilename(title);
+
         const createProxyUrl = (targetUrl, ext = 'mp4') => {
             if (!targetUrl) return "";
             const encodedUrl = encodeURIComponent(targetUrl);
             const encodedUa = encodeURIComponent(userAgent);
             const encodedRef = encodeURIComponent(referer);
-            return `/api/proxy?url=${encodedUrl}&ua=${encodedUa}&ref=${encodedRef}&ext=${ext}`;
+            const encodedTitle = encodeURIComponent(safeTitle);
+            return `/api/proxy?url=${encodedUrl}&ua=${encodedUa}&ref=${encodedRef}&ext=${ext}&title=${encodedTitle}`;
         };
 
         const audioFormats = [];
@@ -105,7 +112,7 @@ app.post('/api/download', async (req, res) => {
             size: "Original",
             format: "mp4",
             quality_badge: "High",
-            url: `/api/process?url=${encodeURIComponent(url)}`
+            url: `/api/process?url=${encodeURIComponent(url)}&title=${encodeURIComponent(safeTitle)}`
         });
 
         if (info.formats) {
@@ -171,7 +178,7 @@ app.post('/api/download', async (req, res) => {
                             size: sizeStr,
                             format: "mp4",
                             quality_badge: "High",
-                            url: `/api/process?url=${encodeURIComponent(url)}&quality=${height}`
+                            url: `/api/process?url=${encodeURIComponent(url)}&quality=${height}&title=${encodeURIComponent(safeTitle)}`
                         });
                         seenVideo.add(label);
                     }
@@ -210,11 +217,12 @@ app.post('/api/download', async (req, res) => {
 });
 
 app.get('/api/process', async (req, res) => {
-    const { url, quality } = req.query;
-    console.log(`Processing Full Download: ${url} (Quality: ${quality || 'Best'})`);
+    const { url, quality, title } = req.query;
+    const safeTitle = title || 'video';
+    console.log(`Processing Full Download: ${url} (Quality: ${quality || 'Best'}, Title: ${safeTitle})`);
 
     const timestamp = Math.floor(Date.now() / 1000);
-    const outputFilename = `${timestamp}_video.mp4`;
+    const outputFilename = `${timestamp}_${safeTitle}.mp4`.replace(/\s+/g, '_');
     const outputPath = path.join(tempDir, outputFilename);
 
     try {
@@ -240,16 +248,24 @@ app.get('/api/process', async (req, res) => {
 
         console.log(`File downloaded to: ${outputPath}`);
 
-        res.download(outputPath, (err) => {
-            if (err) {
-                console.error('Download sending error:', err);
-            }
+        const stats = fs.statSync(outputPath);
+        res.setHeader('Content-Length', stats.size);
+        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.mp4"`);
+
+        const filestream = fs.createReadStream(outputPath);
+        filestream.pipe(res);
+
+        filestream.on('end', () => {
             // Delete file after sending
             fs.unlink(outputPath, (unlinkErr) => {
                 if (unlinkErr) console.error('Error deleting temp file:', unlinkErr);
             });
         });
 
+        filestream.on('error', (err) => {
+            console.error('Stream error:', err);
+        });
     } catch (error) {
         console.error('Process Error:', error);
         res.status(400).json({ error: `Server download error: ${error.message}` });
@@ -257,7 +273,8 @@ app.get('/api/process', async (req, res) => {
 });
 
 app.get('/api/proxy', async (req, res) => {
-    const { url, ua, ref, ext = 'mp4' } = req.query;
+    const { url, ua, ref, ext = 'mp4', title } = req.query;
+    const safeTitle = title || 'download';
     try {
         const headers = {};
         if (ua) headers['User-Agent'] = ua;
@@ -279,7 +296,10 @@ app.get('/api/proxy', async (req, res) => {
         };
 
         res.setHeader('Content-Type', contentTypeMap[ext] || response.headers['content-type'] || 'video/mp4');
-        res.setHeader('Content-Disposition', `attachment; filename="download.${ext}"`);
+        if (response.headers['content-length']) {
+            res.setHeader('Content-Length', response.headers['content-length']);
+        }
+        res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.${ext}"`);
 
         response.data.pipe(res);
     } catch (error) {
