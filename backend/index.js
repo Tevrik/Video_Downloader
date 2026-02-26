@@ -71,7 +71,7 @@ app.post('/api/download', async (req, res) => {
         const info = await youtubedl(url, {
             dumpSingleJson: true,
             noWarnings: true,
-            noCallHome: true,
+            // noCallHome is deprecated in newer yt-dlp
             noCheckCertificate: true,
             preferFreeFormats: true,
             youtubeSkipDashManifest: true,
@@ -135,7 +135,7 @@ app.post('/api/download', async (req, res) => {
             label: "Best Quality (HD/4K)",
             sub_label: "High",
             size: "Original",
-            format: "mp4",
+            format: "auto",
             quality_badge: "High",
             url: `/api/process?url=${encodeURIComponent(url)}&title=${encodeURIComponent(safeTitle)}`
         });
@@ -198,10 +198,10 @@ app.post('/api/download', async (req, res) => {
                     const label = `${height}p (High Quality)`;
                     if (!seenVideo.has(label)) {
                         videoFormats.push({
-                            label: "MP4",
+                            label: "Video",
                             sub_label: label,
                             size: sizeStr,
-                            format: "mp4",
+                            format: "auto",
                             quality_badge: "High",
                             url: `/api/process?url=${encodeURIComponent(url)}&quality=${height}&title=${encodeURIComponent(safeTitle)}`
                         });
@@ -247,36 +247,49 @@ app.get('/api/process', async (req, res) => {
     console.log(`Processing Full Download: ${url} (Quality: ${quality || 'Best'}, Title: ${safeTitle})`);
 
     const timestamp = Math.floor(Date.now() / 1000);
-    const outputFilename = `${timestamp}_${safeTitle}.mp4`.replace(/\s+/g, '_');
-    const outputPath = path.join(tempDir, outputFilename);
+    const uniqueId = `${timestamp}_${Math.random().toString(36).substring(2, 8)}`;
+    const outputTemplate = path.join(tempDir, `${uniqueId}_%(title)s.%(ext)s`);
 
     try {
         const options = {
-            output: outputPath,
-            mergeOutputFormat: 'mp4',
-            noWarnings: true,
-            noCallHome: true,
-            ffmpegLocation: '/usr/bin/ffmpeg' // Explicit path for some environments
+            output: outputTemplate,
+            noWarnings: true
+            // noCallHome is deprecated
         };
 
         if (quality) {
-            options.format = `bestvideo[height<=${quality}]+bestaudio/best[height<=${quality}]`;
+            options.format = `bestvideo[height<=${quality}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=${quality}]+bestaudio/best[height<=${quality}]/best`;
         } else {
-            options.format = 'bestvideo+bestaudio/best';
+            options.format = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best';
         }
 
         await youtubedl(url, options);
 
-        if (!fs.existsSync(outputPath)) {
+        // Find the actual downloaded file since the extension could be mp4, mkv, webm, etc.
+        const files = fs.readdirSync(tempDir);
+        const downloadedFile = files.find(f => f.startsWith(uniqueId));
+
+        if (!downloadedFile) {
             throw new Error("File not found after download");
         }
 
-        console.log(`File downloaded to: ${outputPath}`);
+        const outputPath = path.join(tempDir, downloadedFile);
+        const ext = path.extname(downloadedFile).substring(1) || 'mp4';
+
+        const contentTypeMap = {
+            'mp4': 'video/mp4',
+            'mkv': 'video/x-matroska',
+            'webm': 'video/webm',
+            'm4a': 'audio/mp4',
+            'mp3': 'audio/mpeg'
+        };
+
+        console.log(`File downloaded to: ${outputPath} (ext: ${ext})`);
 
         const stats = fs.statSync(outputPath);
         res.setHeader('Content-Length', stats.size);
-        res.setHeader('Content-Type', 'video/mp4');
-        res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.mp4"`);
+        res.setHeader('Content-Type', contentTypeMap[ext] || 'application/octet-stream');
+        res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.${ext}"`);
 
         const filestream = fs.createReadStream(outputPath);
         filestream.pipe(res);
@@ -313,7 +326,6 @@ app.get('/api/playlist/download', async (req, res) => {
             format: 'bestvideo[height<=720]+bestaudio/best[height<=720]',
             mergeOutputFormat: 'mp4',
             noWarnings: true,
-            noCallHome: true,
             ignoreErrors: true, // If one video fails, continue with others
             ffmpegLocation: '/usr/bin/ffmpeg'
         });

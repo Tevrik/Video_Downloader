@@ -102,7 +102,7 @@ async function tryCobaltDownload(url: string, platform: PlatformId): Promise<Vid
         },
         body: JSON.stringify({
           url: url,
-          vQuality: '1080',
+          vQuality: 'max', // Use 'max' or highest available instead of limiting to 1080
           filenamePattern: 'basic',
           isAudioOnly: false,
           disableMetadata: true
@@ -212,11 +212,8 @@ export const fetchVideoMetadata = async (url: string, platform: PlatformId): Pro
       return localResult;
     }
   } catch (error: any) {
-    console.error("Local backend error:", error);
-    // If it's a real server error (not a connectivity issue), throw it
-    if (error.message && !error.message.includes('Failed to fetch') && !error.message.includes('NetworkError')) {
-      throw error;
-    }
+    console.warn("Local backend error, falling back to Cobalt:", error.message);
+    // Continue execution to try Cobalt instead of throwing
   }
 
   // 3. Fallback to Cobalt API
