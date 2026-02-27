@@ -246,12 +246,14 @@ app.post('/api/download', async (req, res) => {
 
 app.get('/api/process', async (req, res) => {
     const { url, quality, title } = req.query;
-    const safeTitle = title || 'video';
+    // Limit safe title to 60 characters to prevent header overflow
+    let safeTitle = (title || 'video').replace(/[<>:"/\\|?*]/g, '_').substring(0, 60);
     console.log(`Processing Full Download: ${url} (Quality: ${quality || 'Best'}, Title: ${safeTitle})`);
 
     const timestamp = Math.floor(Date.now() / 1000);
     const uniqueId = `${timestamp}_${Math.random().toString(36).substring(2, 8)}`;
-    const outputTemplate = path.join(tempDir, `${uniqueId}_%(title)s.%(ext)s`);
+    // Use yt-dlp's video ID instead of title for the temp file to strictly avoid OS filename length limits (Errno 36)
+    const outputTemplate = path.join(tempDir, `${uniqueId}_%(id)s.%(ext)s`);
 
     try {
         const options = {
@@ -292,7 +294,9 @@ app.get('/api/process', async (req, res) => {
         const stats = fs.statSync(outputPath);
         res.setHeader('Content-Length', stats.size);
         res.setHeader('Content-Type', contentTypeMap[ext] || 'application/octet-stream');
-        res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.${ext}"`);
+        // Securely encode the filename for headers to support wide Unicode chars
+        const encodedFilename = encodeURIComponent(safeTitle).replace(/['()]/g, escape).replace(/\*/g, '%2A');
+        res.setHeader('Content-Disposition', `attachment; filename="video.${ext}"; filename*=UTF-8''${encodedFilename}.${ext}`);
 
         const filestream = fs.createReadStream(outputPath);
         filestream.pipe(res);
@@ -325,7 +329,8 @@ app.get('/api/playlist/download', async (req, res) => {
         // Download all items in playlist
         // We use a simplified format to speed up playlist downloads
         await youtubedl(url, {
-            output: `${playlistDir}/%(title)s.%(ext)s`,
+            // Truncate title to 40 characters maximum to avoid OS 'File name too long' errors
+            output: `${playlistDir}/%(title).40s_%(id)s.%(ext)s`,
             format: 'bestvideo[height<=720]+bestaudio/best[height<=720]',
             mergeOutputFormat: 'mp4',
             noWarnings: true,
