@@ -130,14 +130,14 @@ app.post('/api/download', async (req, res) => {
         const audioFormats = [];
         const videoFormats = [];
 
-        // 1. Best Quality (Merged HD/4K)
+        // 1. Best Quality (Max 1080p)
         videoFormats.push({
-            label: "Best Quality (HD/4K)",
+            label: "Best Quality (Max 1080p)",
             sub_label: "High",
             size: "Original",
             format: "auto",
             quality_badge: "High",
-            url: `/api/process?url=${encodeURIComponent(url)}&title=${encodeURIComponent(safeTitle)}`
+            url: `/api/process?url=${encodeURIComponent(url)}&quality=1080&title=${encodeURIComponent(safeTitle)}`
         });
 
         if (info.formats) {
@@ -180,6 +180,9 @@ app.post('/api/download', async (req, res) => {
                 }
                 // Progressive Video (Video + Audio combined)
                 else if (vcodec !== 'none' && acodec !== 'none') {
+                    // Skip resolutions higher than 1080p
+                    if (height && height > 1080) continue;
+
                     const label = height ? `${height}p` : "Video";
                     const videoLabel = ext.toUpperCase();
                     if (!seenVideo.has(label + ext)) {
@@ -194,7 +197,7 @@ app.post('/api/download', async (req, res) => {
                     }
                 }
                 // High Quality Video Only (Need merging)
-                else if (vcodec !== 'none' && acodec === 'none' && height >= 1080) {
+                else if (vcodec !== 'none' && acodec === 'none' && height >= 1080 && height <= 1080) {
                     const label = `${height}p (High Quality)`;
                     if (!seenVideo.has(label)) {
                         videoFormats.push({
